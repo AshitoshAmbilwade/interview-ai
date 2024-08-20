@@ -35,7 +35,7 @@ function Header() {
       {/* Main container for the header, using flexbox for layout and Tailwind for styling */}
 
       <img
-        src="/logo.svg"
+        src="/logo.png"
         alt="Logo"
         width={40}
         height={40}

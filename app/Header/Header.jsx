@@ -35,7 +35,7 @@ function Header() {
   return (
     <div className="flex p-4 items-center justify-between bg-gray-100 shadow-sm">
       <img
-        src="/logo.svg"
+        src="/logo.png"
         alt="Logo"
         width={40}
         height={40}
