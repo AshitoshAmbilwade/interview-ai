@@ -1,9 +1,23 @@
+"use client"
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import HowItWorks from "./dashboard/howitwork/page";
 import Header from "./Header/Header";
+import { useUser } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
+  const { isSignedIn } = useUser();
+  const router = useRouter();
+
+  const handleGetStartedClick = () => {
+    if (isSignedIn) {
+      router.push("/dashboard");
+    } else {
+      router.push("/sign-in?redirect_url=" + encodeURIComponent("/dashboard"));
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-l from-white via-indigo-100 to-blue-400 text-gray-800">
       <Header />
@@ -21,11 +35,12 @@ export default function Home() {
 
           {/* Action Buttons */}
           <div className="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-8">
-            <Link href="/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard">
-              <Button className="w-full md:w-auto bg-blue-600 text-white border-0 shadow-lg hover:bg-blue-500 transition-transform duration-300 ease-in-out transform hover:scale-110">
-                Get Started
-              </Button>
-            </Link>
+            <Button
+              className="w-full md:w-auto bg-blue-600 text-white border-0 shadow-lg hover:bg-blue-500 transition-transform duration-300 ease-in-out transform hover:scale-110"
+              onClick={handleGetStartedClick}
+            >
+              Get Started
+            </Button>
             <Link href="/watch-video">
               <Button className="w-full md:w-auto bg-gray-600 text-white border-0 shadow-lg hover:bg-gray-500 transition-transform duration-300 ease-in-out transform hover:scale-110">
                 Watch Video
@@ -35,10 +50,7 @@ export default function Home() {
         </div>
 
         {/* Section: "Get Ready for Jobs at Leading Firms" */}
-        <section
-          id="leading-firms"
-          className="mt-16 md:mt-20 px-6 md:px-20 lg:px-32 py-12"
-        >
+        <section id="leading-firms" className="mt-16 md:mt-20 px-6 md:px-20 lg:px-32 py-12">
           <h2 className="text-3xl font-bold text-gray-800 mb-10 animate-fadeIn hover:text-indigo-600 transition-colors duration-300 ease-in-out">
             Get Ready for Jobs at Leading Firms
           </h2>
@@ -55,27 +67,22 @@ export default function Home() {
         </section>
 
         {/* Section: "How It Works" */}
-        <section
-          id="how-it-works"
-          className="mt-16 md:mt-20 py-12 px-6 md:px-20"
-        >
+        <section id="how-it-works" className="mt-16 md:mt-20 py-12 px-6 md:px-20">
           <HowItWorks />
         </section>
 
         {/* Single Get Started Button */}
         <div className="mt-20 mb-12 flex justify-center px-6">
-          <Link href="http://localhost:3000/sign-in?redirect_url=http%3A%2F%2Flocalhost%3A3000%2Fdashboard">
-            <Button className="w-full md:w-auto bg-blue-600 text-white border-0 shadow-lg hover:bg-blue-500 transition-transform duration-300 ease-in-out transform hover:scale-110">
-              Get Started
-            </Button>
-          </Link>
+          <Button
+            className="w-full md:w-auto bg-blue-600 text-white border-0 shadow-lg hover:bg-blue-500 transition-transform duration-300 ease-in-out transform hover:scale-110"
+            onClick={handleGetStartedClick}
+          >
+            Get Started
+          </Button>
         </div>
 
         {/* About Us Section */}
-        <div
-          id="about-us"
-          className="mt-16 md:mt-20 p-12 px-6 md:px-20 lg:px-32 py-12"
-        >
+        <div id="about-us" className="mt-16 md:mt-20 p-12 px-6 md:px-20 lg:px-32 py-12">
           <h2 className="text-3xl font-bold mb-10 text-gray-800 text-center animate-fadeIn hover:text-blue-600 transition-colors duration-300 ease-in-out">
             About Us
           </h2>
