@@ -8,16 +8,11 @@ import { chatSession } from "@/utils/GeminiAIModal";
 import { Button } from "@/components/ui/button";
 
 function RecordAnsSection({ interviewData, activeQuestionIndex, interviewId }) {
-  // State to hold the user's answer
   const [userAnswer, setUserAnswer] = useState('');
-  // State to manage recording status
-  const [isRecording, setIsRecording] = useState(false); // Default to mic off
-  // State to store the ID of the current post
+  const [isRecording, setIsRecording] = useState(false);
   const [postId, setPostId] = useState(null);
-  // State to toggle between text input and recording
-  const [useTextInput, setUseTextInput] = useState(false); // Default to recording mode
+  const [useTextInput, setUseTextInput] = useState(false);
 
-  // Hook for handling speech-to-text functionality
   const {
     results,
     startSpeechToText,
@@ -28,77 +23,71 @@ function RecordAnsSection({ interviewData, activeQuestionIndex, interviewId }) {
     useLegacyResults: false,
   });
 
-  // Effect to update userAnswer when new speech-to-text results are available
+  // Clear the results before each new recording
+  useEffect(() => {
+    if (isRecording) {
+      setResults([]); // Clear previous results to avoid repetition
+    }
+  }, [isRecording, setResults]);
+
   useEffect(() => {
     if (results.length > 0) {
-      // Combine all results into a single string
       const currentResults = results.map(result => result.transcript).join(' ');
-      // Update the userAnswer state
-      setUserAnswer(currentResults);
+      setUserAnswer(prevAnswer => {
+        // Add debounce mechanism to avoid repetitions
+        if (prevAnswer.trim() === currentResults.trim()) {
+          return prevAnswer; // Skip adding the same result multiple times
+        }
+        return currentResults;
+      });
     }
   }, [results]);
 
-  // Effect to trigger feedback collection when recording stops and userAnswer is present
   useEffect(() => {
     if (!isRecording && userAnswer && !useTextInput) {
       getFeedback();
     }
   }, [isRecording, userAnswer, useTextInput]);
 
-  // Function to handle the recording toggle
   const handleRecording = () => {
     if (isRecording) {
-      // Stop recording if currently recording
       stopSpeechToText();
       setIsRecording(false);
     } else {
-      // Clear the previous answer and start recording
-      setUserAnswer('');
+      setUserAnswer(''); // Clear the previous answer
+      setResults([]); // Clear results to start fresh
       startSpeechToText();
       setIsRecording(true);
     }
   };
 
-  // Function to handle text submission
   const handleTextSubmit = () => {
-    if (userAnswer.trim()) { // Ensure userAnswer is not empty
+    if (userAnswer.trim()) {
       getFeedback();
     }
   };
 
-  // Function to collect feedback based on the user's answer
   const getFeedback = async () => {
-    console.log("Interview ID:", interviewId);
-    console.log("User's Answer:", userAnswer);
-
-    // Get the current question based on the active index
     const currentQuestion = interviewData[activeQuestionIndex];
     setPostId(currentQuestion?.id);
 
-    // Construct the feedback prompt
     const feedbackPrompt = `question:${currentQuestion?.question} userAnswer:${userAnswer}, Depends on question and user answer. Please give us a rating 1 to 5 for the answer and feedback as an area of improvement if any with example, in JSON format with 'rating' and 'feedback' fields only. Do not add additional text.`;
 
     try {
-      // Send the prompt to the chatSession and get the response
       const result = await chatSession.sendMessage(feedbackPrompt);
-      // Clean up and parse the JSON response
       const mockJsonResp = result.response.text().replace("```json", "").replace("```", "");
       const JsonFeedbackResp = JSON.parse(mockJsonResp);
 
-      console.log('JSON Feedback Response:', JsonFeedbackResp);
-
-      // Prepare the feedback data
       const feedbackData = {
-        id: interviewId, // Use interviewId here
+        id: interviewId,
         question: currentQuestion.question,
         correctAnswer: currentQuestion.answer,
         userAnswer: userAnswer,
-        postId: interviewId, // Use interviewId here as postId
+        postId: interviewId,
         rating: JsonFeedbackResp?.rating,
         feedback: JsonFeedbackResp?.feedback,
       };
 
-      // Send feedback data to the server
       const response = await fetch('/api/feedbacks', {
         method: 'POST',
         headers: {
@@ -108,25 +97,20 @@ function RecordAnsSection({ interviewData, activeQuestionIndex, interviewId }) {
       });
 
       if (response.ok) {
-        // Show success message and clear the userAnswer
         toast.success('Successfully saved answer');
-        setUserAnswer(''); // Clear the userAnswer after saving
+        setUserAnswer('');
         setResults([]);
       } else {
-        // Show error message if the response was not successful
         toast.error('Failed to save answer');
       }
-      setResults([]);
     } catch (error) {
-      // Handle errors during the process
       console.error('Error:', error);
       toast.error('Error processing response');
     }
   };
 
   return (
-    <div className="flex flex-col  p-4 space-y-4 overflow-auto">
-      {/* Render text input area if useTextInput is true */}
+    <div className="flex flex-col p-4 space-y-4 overflow-auto">
       {useTextInput ? (
         <div className="flex flex-col items-center space-y-4 flex-grow">
           <textarea
@@ -134,6 +118,8 @@ function RecordAnsSection({ interviewData, activeQuestionIndex, interviewId }) {
             placeholder="Enter your answer here..."
             value={userAnswer}
             onChange={(e) => setUserAnswer(e.target.value)}
+            onPaste={(e) => e.preventDefault()}  // Disable pasting
+            onCopy={(e) => e.preventDefault()}   // Disable copying
             rows={6}
           />
           <Button onClick={handleTextSubmit} variant='outline' className='w-full max-w-md'>
@@ -141,7 +127,6 @@ function RecordAnsSection({ interviewData, activeQuestionIndex, interviewId }) {
           </Button>
         </div>
       ) : (
-        // Render voice recording area if useTextInput is false
         <div className="flex flex-col items-center space-y-4 flex-grow">
           <div className="relative flex flex-col items-center bg-black rounded-lg p-5">
             <img
@@ -174,7 +159,6 @@ function RecordAnsSection({ interviewData, activeQuestionIndex, interviewId }) {
         </div>
       )}
 
-      {/* Toggle button to switch between text input and voice recording */}
       <Button
         onClick={() => setUseTextInput(!useTextInput)}
         variant='outline'
